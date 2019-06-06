@@ -10,3 +10,10 @@ void WinMainCRTStartup()
 		int 1ah
 	}
 }
+
+/*
+int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+{
+	MessageBox(NULL, "success", "Info", MB_OK);
+	return 0;
+}*/
