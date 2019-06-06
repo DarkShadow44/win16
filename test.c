@@ -2,6 +2,8 @@
 
 void WinMainCRTStartup()
 {
+	// Windows doesn't run an exe < 376 byte in NE mode, but runs it as dos mdoe instead... Add a bit of "padding"...
+	char *message = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	MessageBox(NULL, "success", "Info", MB_OK);
 	_asm {
 		xor ax, ax
@@ -10,10 +12,3 @@ void WinMainCRTStartup()
 		int 1ah
 	}
 }
-
-/*
-int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-{
-	MessageBox(NULL, "success", "Info", MB_OK);
-	return 0;
-}*/
