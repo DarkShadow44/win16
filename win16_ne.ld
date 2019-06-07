@@ -1,0 +1,9 @@
+OUTPUT_FORMAT(binary)
+SECTIONS
+{
+    . = 0x0100;
+    .text :
+    {
+        *(.text);
+    }
+}
