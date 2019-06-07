@@ -13,16 +13,16 @@ SECTIONS
 		SHORT (1);
 		/* Relocations */
 		SHORT (0);
-		/* Size of the header in paragraphs (every paragrpah is 16 bytes) */
+		/* Size of the header in paragraphs (every paragraph is 16 bytes) */
 		SHORT (4);
 		/* Minimum extra paragraphs needed */
 		SHORT (0);
 		/* Maximum number of extra paragraphs */
-		SHORT (0xFFFF);
+		SHORT (0x0);
 		/* Initial (relative) SS value */
 		SHORT (0);
 		/* Initial SP value */
-		SHORT (184);
+		SHORT (0);
 		/* Checksum */
 		SHORT (0);
 		/* Initial IP value */
@@ -72,7 +72,7 @@ SECTIONS
 		/* Checksum */
 		LONG (0);
 		/* Flags */
-		SHORT (202);
+		SHORT (2);
 		/* Segment number of automatic data segment */
 		SHORT (2);
 		/* Initial size of local heap */
@@ -80,9 +80,9 @@ SECTIONS
 		/* Initial size of stack */
 		SHORT (0x2000);
 		/* Initial CS:IP */
-		LONG (0x1001C); /* FIXME */
+		LONG (0x10000); /* FIXME */
 		/* initial SS:SP */
-		LONG (0x20000);
+		LONG (0x20300);
 		/* Number of entries in segment table */
 		SHORT (2);
 		/* Number of entries in module reference table */
@@ -164,11 +164,24 @@ SECTIONS
 
 	.imported_names_table :
 	{
-		BYTE (4);
-		BYTE (0x55);
+		BYTE (6);
+		BYTE(0x4B);
+		BYTE(0x45);
+		BYTE(0x52);
+		BYTE(0x4e);
+		BYTE(0x45);
+		BYTE(0x4c);
+
+		BYTE (8);
+		BYTE (0x49);
+		BYTE (0x4e);
+		BYTE (0x49);
+		BYTE (0x54);
+		BYTE (0x54);
+		BYTE (0x41);
 		BYTE (0x53);
-		BYTE (0x45);
-		BYTE (0x52);
+		BYTE (0x4b);
+
 	}
 
 	.non_resident_name_table :
@@ -188,53 +201,23 @@ SECTIONS
 
     .segment1 ALIGN (1 << alignment):
     {
-		BYTE (83);
-		BYTE (81);
-		BYTE (82);
-		BYTE (49);
-		BYTE (192);
-		BYTE (80);
-		BYTE (30);
-		BYTE (184);
-		BYTE (5);
-		BYTE (0);
-		BYTE (80);
-		BYTE (30);
-		BYTE (184);
-		BYTE (0);
-		BYTE (0);
-		BYTE (80);
-		BYTE (49);
-		BYTE (192);
-		BYTE (80);
-		BYTE (154);
-		BYTE (255);
-		BYTE (255);
-		BYTE (0);
-		BYTE (0);
-		BYTE (90);
-		BYTE (89);
-		BYTE (91);
-		BYTE (195);
-		BYTE (232);
-		BYTE (225);
-		BYTE (255);
-		BYTE (180);
-		BYTE (76);
-		BYTE (205);
-		BYTE (33);
-		BYTE (205);
-		BYTE (33);
+		*(.text);
     }
 
 	.segment1_reloc :
 	{
+		/* Count */
 		SHORT (1);
+		/* Type; FAR_ADDR */
 		BYTE (3);
-		BYTE (1);
-		SHORT (20);
+		/* Flags: IMPORTNAME */
+		BYTE (2);
+		/* Offset */
 		SHORT (1);
+		/* index module */
 		SHORT (1);
+		/* offset procedure name */
+		SHORT (8);
 	}
 
 	.segment2 ALIGN (1 << alignment) :

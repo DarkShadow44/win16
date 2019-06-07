@@ -1,7 +1,8 @@
-//#include <windows.h>
-
 asm (
+	/*"lcall $0x0,$0xffff\n"*/
+	".byte 0x9a,0xff,0xff,0x00,0x00\n"
 	"call  _dosmain\n"
+
      "mov   $0x4C,%ah\n"
      "int   $0x21\n"
 );
@@ -24,7 +25,7 @@ int dosmain(void)
 /*
 void WinMainCRTStartup()
 {
-	// Windows doesn't run an exe < 376 byte in NE mode, but runs it as dos mdoe instead... Add a bit of "padding"...
+	// Windows doesn't run an exe < 376 byte in NE mode, but runs it as dos mode instead... Add a bit of "padding"...
 	char *message = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 	//MessageBox(NULL, "success", "Info", MB_OK);
 	_asm {
