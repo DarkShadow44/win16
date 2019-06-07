@@ -1,13 +1,15 @@
+#include <windows.h>
 asm (
 	/*"lcall $0x0,$0xffff\n"*/
 	".byte 0x9a,0xff,0xff,0x00,0x00\n"
+	"call  _dosmain\n"
 	"call  _dosmain\n"
 
      "mov   $0x4C,%ah\n"
      "int   $0x21\n"
 );
 
-static void print(char *string)
+static PASCAL void print(char *string)
 {
     asm volatile ("mov   $0x09, %%ah\n"
                   "int   $0x21\n"
@@ -18,7 +20,9 @@ static void print(char *string)
 
 int dosmain(void)
 {
-    print("Hello, World2!\n$");
+	print("Hello_World_I_am_Alive!\n$");
+	print("Hello_World_2_am_Alive!\n$");
+	print("Hello_World_I_am_Alive!\n$");
     return 0;
 }
 

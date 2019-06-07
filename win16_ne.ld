@@ -220,15 +220,11 @@ SECTIONS
 		SHORT (8);
 	}
 
+
+	. = 0x1200;
 	.segment2 ALIGN (1 << alignment) :
 	{
-		BYTE (72);
-		BYTE (33);
-		BYTE (10);
-		BYTE (36);
-		
-
-
+		*(.rdata);
 	}
 
 	/DISCARD/ :
