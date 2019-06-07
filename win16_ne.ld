@@ -82,7 +82,7 @@ SECTIONS
 		/* Initial CS:IP */
 		LONG (0x10000); /* FIXME */
 		/* initial SS:SP */
-		LONG (0x20300);
+		LONG (0x21000);
 		/* Number of entries in segment table */
 		SHORT (2);
 		/* Number of entries in module reference table */
@@ -222,106 +222,13 @@ SECTIONS
 
 	.segment2 ALIGN (1 << alignment) :
 	{
-		BYTE (73);
-		BYTE (110);
-		BYTE (102);
-		BYTE (111);
-		BYTE (0);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
-		BYTE (120);
+		BYTE (72);
+		BYTE (33);
+		BYTE (10);
+		BYTE (36);
+		
+
+
 	}
 
 	/DISCARD/ :
