@@ -1,7 +1,7 @@
 OUTPUT_FORMAT(binary)
 SECTIONS
 {
-	alignment = 1;
+	alignment = 2;
 
 	.dos_header :
 	{
@@ -22,7 +22,7 @@ SECTIONS
 		/* Initial (relative) SS value */
 		SHORT (0);
 		/* Initial SP value */
-		SHORT (0);
+		SHORT (184);
 		/* Checksum */
 		SHORT (0);
 		/* Initial IP value */
@@ -72,21 +72,21 @@ SECTIONS
 		/* Checksum */
 		LONG (0);
 		/* Flags */
-		SHORT (0);
+		SHORT (202);
 		/* Segment number of automatic data segment */
-		SHORT (0);
+		SHORT (2);
 		/* Initial size of local heap */
 		SHORT (0x400);
 		/* Initial size of stack */
 		SHORT (0x2000);
 		/* Initial CS:IP */
-		LONG (0); /* FIXME */
+		LONG (0x1001C); /* FIXME */
 		/* initial SS:SP */
-		LONG (20000);
+		LONG (0x20000);
 		/* Number of entries in segment table */
-		SHORT (1);
+		SHORT (2);
 		/* Number of entries in module reference table */
-		SHORT (0); /* FIXME */
+		SHORT (1); /* FIXME */
 		/* Length of non resident name table */
 		SHORT (SIZEOF(.non_resident_name_table));
 		/* Offset segment table */
@@ -98,7 +98,7 @@ SECTIONS
 		/* Offset module reference table */
 		SHORT (ADDR(.module_reference_table) - ADDR(.ne_header));
 		/* Offset imported names table */
-		SHORT (ADDR(.imported_names_table) - ADDR(.ne_header));
+		SHORT (ADDR(.imported_names_table) - ADDR(.ne_header) - 1);
 		/* Offset non resident name table */
 		LONG (ADDR(.non_resident_name_table));
 		/* Number of movable entries in entry table */
@@ -122,11 +122,20 @@ SECTIONS
 		/* Position */
 		SHORT (ADDR(.segment1) >> alignment);
 		/* Length */
-		SHORT (SIZEOF(.segment1) >> alignment);
+		SHORT (SIZEOF(.segment1));
 		/* Flags */
-		SHORT (0);
+		SHORT (0xD40);
 		/* Minimum allocation */
-		SHORT (SIZEOF(.segment1) >> alignment);
+		SHORT (SIZEOF(.segment1));
+
+		/* Position */
+		SHORT (ADDR(.segment2)  >> alignment);
+		/* Length */
+		SHORT (SIZEOF(.segment2));
+		/* Flags */
+		SHORT (0xC41);
+		/* Minimum allocation */
+		SHORT (SIZEOF(.segment2));
 	}
 
 	.resource_table :
@@ -137,32 +146,204 @@ SECTIONS
 
 	.resident_name_table :
 	{
-		LONG (0);
+		BYTE (4);
+		BYTE (74);
+		BYTE (65);
+		BYTE (73);
+		BYTE (74);
+		SHORT (0);
+
+		BYTE (0);
+		SHORT (1);
 	}
 
 	.module_reference_table :
 	{
-
+		SHORT (1);
 	}
 
 	.imported_names_table :
 	{
-
+		BYTE (4);
+		BYTE (0x55);
+		BYTE (0x53);
+		BYTE (0x45);
+		BYTE (0x52);
 	}
 
 	.non_resident_name_table :
 	{
+		BYTE(8);
+		BYTE(0x74); BYTE(0x65); BYTE(0x73); BYTE(0x74); BYTE(0x2e); BYTE(0x65); BYTE(0x78); BYTE(0x65);
+		SHORT (0);
 
+		BYTE (0);
+		SHORT (0x5153);
 	}
 
 	.entry_table :
 	{
-		LONG (0);
-		LONG (0);
+		SHORT(0);
 	}
 
-    .segment1 :
+    .segment1 ALIGN (1 << alignment):
     {
-        *(.text);
+		BYTE (83);
+		BYTE (81);
+		BYTE (82);
+		BYTE (49);
+		BYTE (192);
+		BYTE (80);
+		BYTE (30);
+		BYTE (184);
+		BYTE (5);
+		BYTE (0);
+		BYTE (80);
+		BYTE (30);
+		BYTE (184);
+		BYTE (0);
+		BYTE (0);
+		BYTE (80);
+		BYTE (49);
+		BYTE (192);
+		BYTE (80);
+		BYTE (154);
+		BYTE (255);
+		BYTE (255);
+		BYTE (0);
+		BYTE (0);
+		BYTE (90);
+		BYTE (89);
+		BYTE (91);
+		BYTE (195);
+		BYTE (232);
+		BYTE (225);
+		BYTE (255);
+		BYTE (180);
+		BYTE (76);
+		BYTE (205);
+		BYTE (33);
+		BYTE (205);
+		BYTE (33);
     }
+
+	.segment1_reloc :
+	{
+		SHORT (1);
+		BYTE (3);
+		BYTE (1);
+		SHORT (20);
+		SHORT (1);
+		SHORT (1);
+	}
+
+	.segment2 ALIGN (1 << alignment) :
+	{
+		BYTE (73);
+		BYTE (110);
+		BYTE (102);
+		BYTE (111);
+		BYTE (0);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+		BYTE (120);
+	}
+
+	/DISCARD/ :
+	{
+		*(.text)
+		*(*)
+	}
 }
