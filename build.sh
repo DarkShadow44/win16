@@ -7,6 +7,7 @@ export INCLUDE=$WATCOM/h:$WATCOM/h/win
 export LIB=$WATCOM/lib286:$WATCOM/lib286/dos
 
 i686-w64-mingw32-gcc -m16 -c test.c -std=gnu99
+strip -s test.o # Hack !!
 ld -m elf_i386 -T win16_ne.ld test.o -o test_self.exe --nmagic
 #strip test.o
 
