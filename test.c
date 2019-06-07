@@ -1,3 +1,5 @@
+/* Maybe windows needs time, not instant terminate? Or sleep, or maybe some other exit... */
+
 #include <windows.h>
 asm (
 	/*"lcall $0x0,$0xffff\n"*/
@@ -23,6 +25,7 @@ int dosmain(void)
 	print("Hello_World_I_am_Alive!\n$");
 	print("Hello_World_2_am_Alive!\n$");
 	print("Hello_World_I_am_Alive!\n$");
+	asm("int3");
     return 0;
 }
 
