@@ -23,6 +23,7 @@ instances:
     type: resource_table
     io: _root._io
     pos: header.e_lfanew + ne_header.ne_rsrctab
+    if: ne_header.ne_rsrctab != ne_header.ne_restab # some compilers don't put in a resource table at all
   resident_name_table:
     type: resident_name_table
     io: _root._io
