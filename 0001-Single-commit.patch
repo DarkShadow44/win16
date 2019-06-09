@@ -1,0 +1,960 @@
+From b71e3bac238cd96c654789dc89c64de39a67fb07 Mon Sep 17 00:00:00 2001
+From: Fabian Maurer <dark.shadow4@web.de>
+Date: Sun, 9 Jun 2019 22:42:29 +0200
+Subject: [PATCH] Single commit
+
+---
+ binutils-2.32/bfd/Makefile.am          |   2 +
+ binutils-2.32/bfd/bfd-in2.h            |   2 +
+ binutils-2.32/bfd/config.bfd           |  10 +-
+ binutils-2.32/bfd/configure.ac         |   1 +
+ binutils-2.32/bfd/i386ne.c             | 684 +++++++++++++++++++++++++
+ binutils-2.32/bfd/targets.c            |   3 +
+ binutils-2.32/ld/Makefile.am           |   4 +
+ binutils-2.32/ld/configure.tgt         |   2 +-
+ binutils-2.32/ld/emulparams/i386ne.sh  |   4 +
+ binutils-2.32/ld/genscripts.sh         |   0
+ binutils-2.32/ld/scripttempl/i386ne.sc |  21 +
+ binutils-2.32/mkinstalldirs            |   0
+ first_build.sh                         |   6 +
+ i386ne.c                               |   1 +
+ i386ne.sc                              |   1 +
+ 15 files changed, 735 insertions(+), 6 deletions(-)
+ create mode 100644 binutils-2.32/bfd/i386ne.c
+ create mode 100755 binutils-2.32/ld/emulparams/i386ne.sh
+ mode change 100644 => 100755 binutils-2.32/ld/genscripts.sh
+ create mode 100644 binutils-2.32/ld/scripttempl/i386ne.sc
+ mode change 100644 => 100755 binutils-2.32/mkinstalldirs
+ create mode 120000 i386ne.c
+ create mode 120000 i386ne.sc
+
+diff --git a/binutils-2.32/bfd/Makefile.am b/binutils-2.32/bfd/Makefile.am
+index a9191555..959da982 100644
+--- a/binutils-2.32/bfd/Makefile.am
++++ b/binutils-2.32/bfd/Makefile.am
+@@ -366,6 +366,7 @@ BFD32_BACKENDS = \
+ 	i386bsd.lo \
+ 	i386lynx.lo \
+ 	i386msdos.lo \
++	i386ne.lo \
+ 	mach-o.lo \
+ 	mach-o-i386.lo \
+ 	mach-o-arm.lo \
+@@ -503,6 +504,7 @@ BFD32_BACKENDS_CFILES = \
+ 	i386bsd.c \
+ 	i386lynx.c \
+ 	i386msdos.c \
++	i386ne.c \
+ 	mach-o.c \
+ 	mach-o-i386.c \
+ 	mach-o-arm.c \
+diff --git a/binutils-2.32/bfd/bfd-in2.h b/binutils-2.32/bfd/bfd-in2.h
+index e25da50a..60ec1782 100644
+--- a/binutils-2.32/bfd/bfd-in2.h
++++ b/binutils-2.32/bfd/bfd-in2.h
+@@ -7197,6 +7197,7 @@ struct bfd
+       struct bfd_pef_data_struct *pef_data;
+       struct bfd_pef_xlib_data_struct *pef_xlib_data;
+       struct bfd_sym_data_struct *sym_data;
++      struct ne_data_struct *ne_data;
+       void *any;
+     }
+   tdata;
+@@ -7497,6 +7498,7 @@ enum bfd_flavour
+   bfd_target_os9k_flavour,
+   bfd_target_versados_flavour,
+   bfd_target_msdos_flavour,
++  bfd_target_ne_flavour,
+   bfd_target_ovax_flavour,
+   bfd_target_evax_flavour,
+   bfd_target_mmo_flavour,
+diff --git a/binutils-2.32/bfd/config.bfd b/binutils-2.32/bfd/config.bfd
+index 0e1ddb65..8d01378d 100644
+--- a/binutils-2.32/bfd/config.bfd
++++ b/binutils-2.32/bfd/config.bfd
+@@ -639,7 +639,7 @@ case "${targ}" in
+   i[3-7]86-*-linux-*)
+     targ_defvec=i386_elf32_vec
+     targ_selvecs="iamcu_elf32_vec i386_pei_vec"
+-    targ64_selvecs="x86_64_elf64_vec x86_64_elf32_vec x86_64_pei_vec l1om_elf64_vec k1om_elf64_vec"
++    targ64_selvecs="x86_64_elf64_vec x86_64_elf32_vec x86_64_pei_vec l1om_elf64_vec k1om_elf64_vec i386_ne_vec"
+     ;;
+   i[3-7]86-*-nacl*)
+     targ_defvec=i386_elf32_nacl_vec
+@@ -694,7 +694,7 @@ case "${targ}" in
+     ;;
+   x86_64-*-linux-*)
+     targ_defvec=x86_64_elf64_vec
+-    targ_selvecs="i386_elf32_vec iamcu_elf32_vec x86_64_elf32_vec i386_pei_vec x86_64_pei_vec l1om_elf64_vec k1om_elf64_vec"
++    targ_selvecs="i386_elf32_vec iamcu_elf32_vec x86_64_elf32_vec i386_pei_vec x86_64_pei_vec l1om_elf64_vec k1om_elf64_vec i386_ne_vec"
+     want64=true
+     ;;
+   x86_64-*-nacl*)
+@@ -705,7 +705,7 @@ case "${targ}" in
+     ;;
+   x86_64-*-mingw* | x86_64-*-pe | x86_64-*-pep | x86_64-*-cygwin)
+     targ_defvec=x86_64_pe_vec
+-    targ_selvecs="x86_64_pe_vec x86_64_pei_vec x86_64_pe_be_vec x86_64_elf64_vec l1om_elf64_vec k1om_elf64_vec i386_pe_vec i386_pei_vec i386_elf32_vec iamcu_elf32_vec"
++    targ_selvecs="x86_64_pe_vec x86_64_pei_vec x86_64_pe_be_vec x86_64_elf64_vec l1om_elf64_vec k1om_elf64_vec i386_pe_vec i386_pei_vec i386_elf32_vec iamcu_elf32_vec i386_ne_vec"
+     want64=true
+     targ_underscore=no
+     ;;
+@@ -729,7 +729,7 @@ case "${targ}" in
+     ;;
+   i[3-7]86-*-msdos*)
+     targ_defvec=i386_aout_vec
+-    targ_selvecs=i386_msdos_vec
++    targ_selvecs=i386_msdos_vec i386_ne_vec
+     ;;
+   i[3-7]86-*-moss*)
+     targ_defvec=i386_elf32_vec
+@@ -755,7 +755,7 @@ case "${targ}" in
+     ;;
+   i[3-7]86-*-mingw32* | i[3-7]86-*-cygwin* | i[3-7]86-*-winnt | i[3-7]86-*-pe)
+     targ_defvec=i386_pe_vec
+-    targ_selvecs="i386_pe_vec i386_pei_vec i386_elf32_vec iamcu_elf32_vec"
++    targ_selvecs="i386_pe_vec i386_pei_vec i386_elf32_vec iamcu_elf32_vec i386_ne_vec"
+     targ_underscore=yes
+     ;;
+   i[3-7]86-*-vxworks*)
+diff --git a/binutils-2.32/bfd/configure.ac b/binutils-2.32/bfd/configure.ac
+index eda38ea0..97b5c6dc 100644
+--- a/binutils-2.32/bfd/configure.ac
++++ b/binutils-2.32/bfd/configure.ac
+@@ -500,6 +500,7 @@ do
+     i386_elf32_vxworks_vec)	 tb="$tb elf32-i386.lo elfxx-x86.lo elf-ifunc.lo elf-nacl.lo elf-vxworks.lo elf32.lo $elf" ;;
+     i386_mach_o_vec)		 tb="$tb mach-o-i386.lo" ;;
+     i386_msdos_vec)		 tb="$tb i386msdos.lo" ;;
++	i386_ne_vec)		 tb="$tb i386ne.lo" ;;
+     i386_pe_vec)		 tb="$tb pe-i386.lo peigen.lo $coff" ;;
+     i386_pei_vec)		 tb="$tb pei-i386.lo peigen.lo $coff" ;;
+     iamcu_elf32_vec)		 tb="$tb elf32-i386.lo elfxx-x86.lo elf-ifunc.lo elf-nacl.lo elf-vxworks.lo elf32.lo $elf" ;;
+diff --git a/binutils-2.32/bfd/i386ne.c b/binutils-2.32/bfd/i386ne.c
+new file mode 100644
+index 00000000..752d2e09
+--- /dev/null
++++ b/binutils-2.32/bfd/i386ne.c
+@@ -0,0 +1,684 @@
++/* BFD back-end for Win16 NE Executables.
++   Copyright (C) 2019 Fabian Maurer
++
++   This file is part of BFD, the Binary File Descriptor library.
++
++   This program is free software; you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation; either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program; if not, write to the Free Software
++   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
++   MA 02110-1301, USA.
++ */
++
++
++#include "sysdep.h"
++#include "bfd.h"
++#include "libbfd.h"
++#include <stdint.h>
++//#include "libaout.h"
++
++
++typedef struct
++{
++	int16_t  ne_magic;             /* 00 NE signature 'NE' */
++	int8_t   ne_ver;               /* 02 Linker version number */
++	int8_t   ne_rev;               /* 03 Linker revision number */
++	int16_t  ne_enttab;            /* 04 Offset to entry table relative to NE */
++	int16_t  ne_cbenttab;          /* 06 Length of entry table in bytes */
++	int32_t  ne_crc;               /* 08 Checksum */
++	int16_t  ne_flags;             /* 0c Flags about segments in this file */
++	int16_t  ne_autodata;          /* 0e Automatic data segment number */
++	int16_t  ne_heap;              /* 10 Initial size of local heap */
++	int16_t  ne_stack;             /* 12 Initial size of stack */
++	uint32_t ne_csip;              /* 14 Initial CS:IP */
++	uint32_t ne_sssp;              /* 18 Initial SS:SP */
++	int16_t  ne_cseg;              /* 1c # of entries in segment table */
++	int16_t  ne_cmod;              /* 1e # of entries in module reference tab. */
++	int16_t  ne_cbnrestab;         /* 20 Length of nonresident-name table     */
++	int16_t  ne_segtab;            /* 22 Offset to segment table */
++	int16_t  ne_rsrctab;           /* 24 Offset to resource table */
++	int16_t  ne_restab;            /* 26 Offset to resident-name table */
++	int16_t  ne_modtab;            /* 28 Offset to module reference table */
++	int16_t  ne_imptab;            /* 2a Offset to imported name table */
++	uint32_t ne_nrestab;           /* 2c Offset to nonresident-name table */
++	int16_t  ne_cmovent;           /* 30 # of movable entry points */
++	int16_t  ne_align;             /* 32 Logical sector alignment shift count */
++	int16_t  ne_cres;              /* 34 # of resource segments */
++	int8_t   ne_exetyp;            /* 36 Flags indicating target OS */
++	int8_t   ne_flagsothers;       /* 37 Additional information flags */
++	int16_t  ne_pretthunks;        /* 38 Offset to return thunks */
++	int16_t  ne_psegrefbytes;      /* 3a Offset to segment ref. bytes */
++	int16_t  ne_swaparea;          /* 3c Reserved by Microsoft */
++	int16_t  ne_expver;            /* 3e Expected Windows version number */
++} ne_header;
++
++#define EXE_PAGE_SIZE	512
++
++#define NE_MAX_SEGMENTS 2
++#define NE_MAX_RESIDENT_NAME 10
++#define NE_MAX_MODULE_REFERENCES 10
++#define NE_MAX_NON_RESIDENT_NAME 10
++#define NE_MAX_IMPORTS 10
++
++typedef struct
++{
++	int32_t pos;
++	int32_t length;
++	uint16_t flags;
++} ne_data_segment;
++
++typedef struct
++{
++	char *str;
++	uint16_t ordinal;
++} ne_name;
++
++typedef struct
++{
++	char *name;
++	uint16_t offset;
++} ne_module_reference;
++
++typedef struct
++{
++	char *module;
++	char *func_name;
++} ne_import;
++
++struct ne_data_struct
++{
++	int32_t current_pos;
++	int current_segment;
++	ne_data_segment segments[NE_MAX_SEGMENTS];
++	int current_resident_name;
++	ne_name resident_names[NE_MAX_RESIDENT_NAME];
++	int current_module_reference;
++	ne_module_reference module_references[NE_MAX_MODULE_REFERENCES];
++	int current_non_resident_name;
++	ne_name non_resident_names[NE_MAX_NON_RESIDENT_NAME];
++	int current_import;
++	ne_import imports[NE_MAX_IMPORTS];
++};
++
++typedef struct ne_data_struct tdata_type;
++
++
++static bfd_boolean ne_mkobject (bfd *abfd)
++{
++	tdata_type *data = (tdata_type *) bfd_zmalloc (sizeof (tdata_type));
++	if (data == NULL)
++		return FALSE;
++	data->current_pos = 0xD0; /* Start actual data after DOS and NE header */
++	abfd->tdata.ne_data = data;
++	return TRUE;
++}
++
++
++static bfd_boolean write_dos_header(bfd *abfd)
++{
++	static char buffer[0x40] = {0};
++
++	H_PUT_16 (abfd, 0x5A4D,	&buffer[0x00]);	/* Magic */
++	H_PUT_16 (abfd, 128,	&buffer[0x02]);	/* Used bytes on the last page (every page is 512 bytes) */
++	H_PUT_16 (abfd, 1,		&buffer[0x04]);	/* Number of pages */
++	H_PUT_16 (abfd, 0,		&buffer[0x06]);	/* Relocations */
++	H_PUT_16 (abfd, 4,		&buffer[0x08]);	/* Size of the header in paragraphs (every paragraph is 16 bytes) */
++	H_PUT_16 (abfd, 0,		&buffer[0x0A]);	/* Minimum extra paragraphs needed */
++	H_PUT_16 (abfd, 0x0,	&buffer[0x0C]);	/* Maximum number of extra paragraphs */
++	H_PUT_16 (abfd, 0,		&buffer[0x0E]);	/* Initial (relative) SS value */
++	H_PUT_16 (abfd, 0,		&buffer[0x10]);	/* Initial SP value */
++	H_PUT_16 (abfd, 0,		&buffer[0x12]);	/* Checksum */
++	H_PUT_16 (abfd, 0,		&buffer[0x14]);	/* Initial IP value */
++	H_PUT_16 (abfd, 0,		&buffer[0x16]);	/* Initial (relative) CS value */
++	H_PUT_16 (abfd, 0x40,	&buffer[0x18]);	/* Address of relocation table */
++	H_PUT_16 (abfd, 0,		&buffer[0x1A]);	/* Overlay number */
++	H_PUT_16 (abfd, 0,		&buffer[0x1C]);	/* Reserved */
++	H_PUT_16 (abfd, 0,		&buffer[0x1E]);	/* Reserved */
++	H_PUT_16 (abfd, 0,		&buffer[0x20]);	/* Reserved */
++	H_PUT_16 (abfd, 0,		&buffer[0x22]);	/* Reserved */
++	H_PUT_16 (abfd, 0,		&buffer[0x24]);	/* OEM identifier */
++	H_PUT_16 (abfd, 0,		&buffer[0x26]);	/* OEM information */
++	H_PUT_16 (abfd, 0,		&buffer[0x28]);	/* Reserved */
++	H_PUT_16 (abfd, 0,		&buffer[0x2A]);	/* Reserved */
++	H_PUT_16 (abfd, 0,		&buffer[0x2C]);	/* Reserved */
++	H_PUT_16 (abfd, 0,		&buffer[0x2E]);	/* Reserved */
++	H_PUT_16 (abfd, 0,		&buffer[0x30]);	/* Reserved */
++	H_PUT_16 (abfd, 0,		&buffer[0x32]);	/* Reserved */
++	H_PUT_16 (abfd, 0,		&buffer[0x34]);	/* Reserved */
++	H_PUT_16 (abfd, 0,		&buffer[0x36]);	/* Reserved */
++	H_PUT_16 (abfd, 0,		&buffer[0x38]);	/* Reserved */
++	H_PUT_16 (abfd, 0,		&buffer[0x3A]);	/* Reserved */
++	H_PUT_16 (abfd, 0x80,	&buffer[0x3C]);	/* Offset NE header */
++
++
++	if (bfd_seek (abfd, (file_ptr) 0, SEEK_SET) != 0
++			|| bfd_bwrite (buffer, (bfd_size_type) sizeof(buffer), abfd) != sizeof(buffer))
++		return FALSE;
++
++	return TRUE;
++}
++
++static bfd_boolean write_ne_header(bfd* abfd, ne_header *header)
++{
++	static char buffer[0x40] = {0};
++
++	H_PUT_16 (abfd, 0x454E,					&buffer[0x00]);	/* Magic */
++	H_PUT_8 (abfd, 1,						&buffer[0x02]);	/* Linker major version */
++	H_PUT_8 (abfd, 1,						&buffer[0x04]);	/* Linker minor version */
++	H_PUT_16 (abfd, header->ne_enttab,		&buffer[0x04]);	/* Offset entry Table */
++	H_PUT_16 (abfd, header->ne_cbenttab,	&buffer[0x06]);	/* Length of entry table */
++	H_PUT_32 (abfd, 0,						&buffer[0x08]);	/* Checksum */
++	H_PUT_16 (abfd, header->ne_flags,		&buffer[0x0C]);	/* Flags */
++	H_PUT_16 (abfd, header->ne_autodata,	&buffer[0x0E]);	/* Segment number of automatic data segment */
++	H_PUT_16 (abfd, header->ne_heap,		&buffer[0x10]);	/* Initial size of local heap */
++	H_PUT_16 (abfd, header->ne_stack,		&buffer[0x12]);	/* Initial size of stack */
++	H_PUT_32 (abfd, header->ne_csip,		&buffer[0x14]);	/* Initial CS:IP */
++	H_PUT_32 (abfd, header->ne_sssp,		&buffer[0x18]);	/* initial SS:SP */
++	H_PUT_16 (abfd, header->ne_cseg,		&buffer[0x1C]);	/* Number of entries in segment table */
++	H_PUT_16 (abfd, header->ne_cmod,		&buffer[0x1E]);	/* Number of entries in module reference table */
++	H_PUT_16 (abfd, header->ne_cbnrestab,	&buffer[0x20]);	/* Length of non resident name table */
++	H_PUT_16 (abfd, header->ne_segtab,		&buffer[0x22]);	/* Offset segment table */
++	H_PUT_16 (abfd, header->ne_rsrctab,		&buffer[0x24]);	/* Offset resource table */
++	H_PUT_16 (abfd, header->ne_restab,		&buffer[0x26]);	/* Offset resident name table */
++	H_PUT_16 (abfd, header->ne_modtab,		&buffer[0x28]);	/* Offset module reference table */
++	H_PUT_16 (abfd, header->ne_imptab,		&buffer[0x2A]);	/* Offset imported name table */
++	H_PUT_32 (abfd, header->ne_nrestab,		&buffer[0x2C]);	/* Offset non resident name table */
++	H_PUT_16 (abfd, header->ne_cres,		&buffer[0x30]);	/* Number of movable entries in entry table */
++	H_PUT_16 (abfd, header->ne_align,		&buffer[0x32]);	/* Logical sector alignment shift count */
++	H_PUT_16 (abfd, 0,						&buffer[0x34]);	/* Number of resource segments */
++	H_PUT_8  (abfd, 2,						&buffer[0x36]);	/* Flags for target OS */
++	H_PUT_8  (abfd, 0,						&buffer[0x37]);	/* Reserved */
++	H_PUT_16 (abfd, 0,						&buffer[0x38]);	/* Reserved */
++	H_PUT_16 (abfd, 0,						&buffer[0x3A]);	/* Reserved */
++	H_PUT_16 (abfd, 0,						&buffer[0x3C]);	/* Reserved */
++	H_PUT_16 (abfd, 0,						&buffer[0x3E]);	/* Reserved */
++
++	if (bfd_seek (abfd, (file_ptr) 0x80, SEEK_SET) != 0
++			|| bfd_bwrite (buffer, (bfd_size_type) sizeof(buffer), abfd) != sizeof(buffer))
++		return FALSE;
++
++	return TRUE;
++}
++
++static bfd_boolean write_segment_table(bfd *abfd, ne_header *header)
++{
++	struct ne_data_struct *ne = abfd->tdata.ne_data;
++	int i;
++
++	header->ne_segtab = ne->current_pos - 0x80; /* Offset segment table */
++	header->ne_cseg = ne->current_segment;		/* Number of entries in segment table */
++
++	for (i = 0; i < ne->current_segment; i++)
++	{
++		uint32_t pos = 0;
++		char buffer[200];
++		ne_data_segment *seg = &ne->segments[i];
++
++		H_PUT_16 (abfd, seg->pos >> header->ne_align, &buffer[pos]); pos += 2;	/* Position */
++		H_PUT_16 (abfd, seg->length,				  &buffer[pos]); pos += 2; 	/* Length */
++		H_PUT_16 (abfd, seg->flags,					  &buffer[pos]); pos += 2;	/* Flags */
++		H_PUT_16 (abfd, seg->length,				  &buffer[pos]); pos += 2;	/* Minimum allocation */
++
++		if (bfd_seek (abfd, (file_ptr) ne->current_pos, SEEK_SET) != 0
++			|| bfd_bwrite (buffer, (bfd_size_type) pos, abfd) != pos)
++		return FALSE;
++
++		ne->current_pos += pos;
++	}
++
++	return TRUE;
++}
++
++static bfd_boolean write_resource_table(bfd *abfd, ne_header *header)
++{
++	struct ne_data_struct *ne = abfd->tdata.ne_data;
++	char buffer[100] = {0};
++	uint32_t pos;
++
++	header->ne_rsrctab = ne->current_pos - 0x80; /* Offset resource table */
++
++	/* Write finish */
++	pos = 0;
++	H_PUT_16 (abfd, 0, &buffer[pos]); pos +=2; /* Alignment shift count */
++	H_PUT_16 (abfd, 0, &buffer[pos]); pos +=2; /* Type id */
++	H_PUT_16 (abfd, 0, &buffer[pos]); pos +=2; /* Num resources */
++	H_PUT_32 (abfd, 0, &buffer[pos]); pos +=2; /* Reserved */
++
++	if (bfd_seek (abfd, (file_ptr) ne->current_pos, SEEK_SET) != 0
++		|| bfd_bwrite (buffer, (bfd_size_type) pos, abfd) != pos)
++		return FALSE;
++
++	ne->current_pos += pos;
++
++	return TRUE;
++}
++
++static bfd_boolean write_resident_name_table(bfd *abfd, ne_header *header)
++{
++	struct ne_data_struct *ne = abfd->tdata.ne_data;
++	int i, j;
++	uint32_t pos;
++	char buffer[256];
++
++	header->ne_restab = ne->current_pos - 0x80; /* Offset resident name table */
++
++	for (i = 0; i < ne->current_resident_name; i++)
++	{
++		pos = 0;
++		ne_name *name = &ne->resident_names[i];
++		uint16_t name_length = strlen(name->str);
++
++		H_PUT_8 (abfd, name_length, &buffer[pos++]); /* String length */
++		for (j = 0; j < name_length; j++)			 /* String data */
++			buffer[pos++] = name->str[j];
++		H_PUT_16 (abfd, name->ordinal, &buffer[pos]); pos +=2; /* Ordinal */
++
++		if (bfd_seek (abfd, (file_ptr) ne->current_pos, SEEK_SET) != 0
++			|| bfd_bwrite (buffer, (bfd_size_type) pos, abfd) != pos)
++			return FALSE;
++
++		ne->current_pos += pos;
++	}
++
++	/* Write finish */
++	pos = 0;
++	H_PUT_8  (abfd, 0, &buffer[pos++]); 	   /* String length */
++	H_PUT_16 (abfd, 0, &buffer[pos]); pos +=2; /* Ordinal */
++
++	if (bfd_seek (abfd, (file_ptr) ne->current_pos, SEEK_SET) != 0
++		|| bfd_bwrite (buffer, (bfd_size_type) pos, abfd) != pos)
++		return FALSE;
++
++	ne->current_pos += pos;
++
++	return TRUE;
++}
++
++static ne_module_reference* find_ne_module(struct ne_data_struct *ne, char* name)
++{
++	int i;
++	for (i = 0; i < ne->current_module_reference; i++)
++	{
++		ne_module_reference *ref = &ne->module_references[i];
++		if (strcmp(ref->name, name) == 0)
++			return ref;
++	}
++	return NULL;
++}
++
++static bfd_boolean write_import_name_table(bfd *abfd, ne_header *header)
++{
++	struct ne_data_struct *ne = abfd->tdata.ne_data;
++	int i, j;
++	uint32_t start_pos = ne->current_pos;
++
++	header->ne_imptab = ne->current_pos - 0x80; /* Offset imported name table */
++
++	for (i = 0; i < ne->current_import; i++)
++	{
++		uint32_t pos = 0;
++		char buffer[256];
++		ne_import *import = &ne->imports[i];
++		uint16_t name_length;
++		if (!find_ne_module(ne, import->module))
++		{
++			ne_module_reference ref = {0};
++			ref.name = import->module;
++			ref.offset = ne->current_pos - start_pos;
++			ne->module_references[ne->current_module_reference++] = ref;
++		}
++
++		name_length = strlen(import->module);
++		H_PUT_8 (abfd, name_length, &buffer[pos++]); /* String length */
++		for (j = 0; j < name_length; j++)			 /* String data */
++			buffer[pos++] = import->module[j];
++
++		if (bfd_seek (abfd, (file_ptr) ne->current_pos, SEEK_SET) != 0
++			|| bfd_bwrite (buffer, (bfd_size_type) pos, abfd) != pos)
++		return FALSE;
++
++		ne->current_pos += pos;
++	}
++
++	return TRUE;
++}
++
++static bfd_boolean write_module_reference_table(bfd *abfd, ne_header *header)
++{
++	struct ne_data_struct *ne = abfd->tdata.ne_data;
++	int i;
++
++	header->ne_cmod = ne->current_module_reference; /* Number of entries in module reference table */
++	header->ne_modtab = ne->current_pos - 0x80;		/* Offset module reference table */
++
++	for (i = 0; i < ne->current_module_reference; i++)
++	{
++		char buffer[2];
++		ne_module_reference *ref = &ne->module_references[i];
++
++		H_PUT_16 (abfd, ref->offset, &buffer[0]); /* Offset */
++
++		if (bfd_seek (abfd, (file_ptr) ne->current_pos, SEEK_SET) != 0
++			|| bfd_bwrite (buffer, (bfd_size_type) sizeof(buffer), abfd) != sizeof(buffer))
++		return FALSE;
++
++		ne->current_pos += sizeof(buffer);
++	}
++
++	return TRUE;
++}
++
++static bfd_boolean write_non_resident_name_table(bfd *abfd, ne_header *header)
++{
++	struct ne_data_struct *ne = abfd->tdata.ne_data;
++	int i, j;
++	uint32_t start_pos = ne->current_pos;
++
++	header->ne_nrestab = ne->current_pos; /* Offset non resident name table */
++
++	for (i = 0; i < ne->current_non_resident_name; i++)
++	{
++		uint32_t pos = 0;
++		char buffer[256];
++		ne_name *name = &ne->non_resident_names[i];
++		uint16_t name_length = strlen(name->str);
++
++		H_PUT_8 (abfd, name_length, &buffer[pos++]); /* String length */
++		for (j = 0; j < name_length; j++)			 /* String data */
++			buffer[pos++] = name->str[j];
++		H_PUT_16 (abfd, name->ordinal, &buffer[pos]); pos +=2; /* Ordinal */
++
++		if (bfd_seek (abfd, (file_ptr) ne->current_pos, SEEK_SET) != 0
++			|| bfd_bwrite (buffer, (bfd_size_type) pos, abfd) != pos)
++		return FALSE;
++
++		ne->current_pos += pos;
++	}
++
++	header->ne_cbnrestab = ne->current_pos - start_pos; /* Offset non resident name table */
++
++	return TRUE;
++}
++
++static bfd_boolean write_entry_table(bfd *abfd, ne_header *header)
++{
++	struct ne_data_struct *ne = abfd->tdata.ne_data;
++	char buffer[2] = {0};
++
++	header->ne_enttab = ne->current_pos - 0x80; /* Offset entry table */
++	header->ne_cbenttab = sizeof(buffer); /* Length of entry table */
++
++	if (bfd_seek (abfd, (file_ptr) ne->current_pos, SEEK_SET) != 0
++		|| bfd_bwrite (buffer, (bfd_size_type) sizeof(buffer), abfd) != sizeof(buffer))
++	return FALSE;
++
++	ne->current_pos += sizeof(buffer);
++
++	return TRUE;
++}
++
++static void hack_in_data(struct ne_data_struct *ne)
++{
++	ne_import import;
++	ne_name name;
++
++	import.module = "USER";
++	import.func_name = "MessageBox";
++	ne->imports[ne->current_import++] = import;
++
++	name.str = "test.exe";
++	name.ordinal = 0;
++	ne->non_resident_names[ne->current_non_resident_name++] = name;
++	name.str = "";
++	name.ordinal = 0x5153;
++	ne->non_resident_names[ne->current_non_resident_name++] = name;
++
++	name.str = "test";
++	name.ordinal = 0;
++	ne->resident_names[ne->current_resident_name++] = name;
++	name.str = "";
++	name.ordinal = 1;
++	ne->resident_names[ne->current_resident_name++] = name;
++}
++
++static bfd_boolean ne_write_object_contents (bfd *abfd)
++{
++	int alignment = 2;
++	ne_header header = {0};
++	struct ne_data_struct *ne = abfd->tdata.ne_data;
++
++	header.ne_flags = 2;			/* Flags */
++	header.ne_autodata = 2;			/* Segment number of automatic data segment */
++	header.ne_heap = 0x400;			/* Initial size of local heap */
++	header.ne_stack = 0x2000;		/* Initial size of stack */
++	header.ne_csip = 0x10000;		/* Initial CS:IP */
++	header.ne_sssp = 0x21000;		/* initial SS:SP */
++	header.ne_cmod = 1;				/* Number of entries in module reference table */
++	header.ne_cres = 0;				/* Number of movable entries in entry table */
++	header.ne_align = alignment;	/* Logical sector alignment shift count */
++
++	hack_in_data(ne);
++
++	/* Resource table */
++	if (!write_resource_table(abfd, &header))
++		return FALSE;
++
++	/* Resident name table */
++	if (!write_resident_name_table(abfd, &header))
++		return FALSE;
++
++	/* Import name table - Produces input for module reference table */
++	if (!write_import_name_table(abfd, &header))
++		return FALSE;
++
++	/* Module reference table */
++	if (!write_module_reference_table(abfd, &header))
++		return FALSE;
++
++	/* Entry table */
++	if (!write_entry_table(abfd, &header))
++		return FALSE;
++
++	/* Non resident name table */
++	if (!write_non_resident_name_table(abfd, &header))
++		return FALSE;
++
++	/* Segment table */
++	if (!write_segment_table(abfd, &header))
++		return FALSE;
++	
++
++	
++	/* DOS Header */
++	if (!write_dos_header(abfd))
++		return FALSE;
++
++	/* NE Header */
++	if (!write_ne_header(abfd, &header))
++		return FALSE;
++
++	printf("Hello Worl!\n");
++	return TRUE;
++	
++	
++	
++	/*
++	file_ptr outfile_size = sizeof(hdr);
++	bfd_vma high_vma = 0;
++	
++
++  for (sec = abfd->sections; sec != (asection *) NULL; sec = sec->next)
++    {
++      if (sec->size == 0)
++	continue;
++      if (bfd_get_section_flags (abfd, sec) & SEC_ALLOC)
++	{
++	  bfd_vma sec_vma = bfd_get_section_vma (abfd, sec) + sec->size;
++	  if (sec_vma > high_vma)
++	    high_vma = sec_vma;
++	}
++      if (bfd_get_section_flags (abfd, sec) & SEC_LOAD)
++	{
++	  file_ptr sec_end = (sizeof (hdr)
++			      + bfd_get_section_vma (abfd, sec)
++			      + sec->size);
++	  if (sec_end > outfile_size)
++	    outfile_size = sec_end;
++	}
++    }
++
++
++  if (high_vma > (bfd_vma)0xffff)
++    {
++      bfd_set_error(bfd_error_file_too_big);
++      return FALSE;
++    }
++
++
++  H_PUT_16 (abfd, high_vma, &hdr[16]);
++
++  if (bfd_seek (abfd, (file_ptr) 0, SEEK_SET) != 0
++      || bfd_bwrite (hdr, (bfd_size_type) sizeof(hdr), abfd) != sizeof(hdr))
++    return FALSE;
++
++  return TRUE;*/
++}
++
++static int ne_sizeof_headers (bfd *abfd ATTRIBUTE_UNUSED, struct bfd_link_info *info ATTRIBUTE_UNUSED)
++{
++	return 0;
++}
++
++static bfd_boolean ne_set_section_contents (bfd *abfd, sec_ptr section, const void *location, file_ptr offset, bfd_size_type count)
++{
++	printf("Current section: %s\n", section->name);
++	return TRUE;
++
++  /*section->filepos = EXE_PAGE_SIZE + bfd_get_section_vma (abfd, section);
++
++  if (bfd_get_section_flags (abfd, section) & SEC_LOAD)
++    {
++      if (bfd_seek (abfd, section->filepos + offset, SEEK_SET) != 0
++	  || bfd_bwrite (location, count, abfd) != count)
++	return FALSE;
++    }
++
++  return TRUE;*/
++}
++
++
++
++#define ne_make_empty_symbol _bfd_generic_make_empty_symbol
++
++#define	ne_close_and_cleanup _bfd_generic_close_and_cleanup
++#define ne_bfd_free_cached_info _bfd_generic_bfd_free_cached_info
++#define ne_new_section_hook _bfd_generic_new_section_hook
++#define ne_get_section_contents _bfd_generic_get_section_contents
++#define ne_get_section_contents_in_window \
++  _bfd_generic_get_section_contents_in_window
++#define ne_bfd_get_relocated_section_contents \
++  bfd_generic_get_relocated_section_contents
++#define ne_bfd_relax_section bfd_generic_relax_section
++#define ne_bfd_gc_sections bfd_generic_gc_sections
++#define ne_bfd_lookup_section_flags bfd_generic_lookup_section_flags
++#define ne_bfd_merge_sections bfd_generic_merge_sections
++#define ne_bfd_is_group_section bfd_generic_is_group_section
++#define ne_bfd_discard_group bfd_generic_discard_group
++#define ne_section_already_linked \
++  _bfd_generic_section_already_linked
++#define ne_bfd_define_common_symbol bfd_generic_define_common_symbol
++#define ne_bfd_link_hide_symbol _bfd_generic_link_hide_symbol
++#define ne_bfd_define_start_stop bfd_generic_define_start_stop
++#define ne_bfd_link_hash_table_create _bfd_generic_link_hash_table_create
++#define ne_bfd_link_add_symbols _bfd_generic_link_add_symbols
++#define ne_bfd_link_just_syms _bfd_generic_link_just_syms
++#define ne_bfd_copy_link_hash_symbol_type \
++  _bfd_generic_copy_link_hash_symbol_type
++#define ne_bfd_final_link _bfd_generic_final_link
++#define ne_bfd_link_split_section _bfd_generic_link_split_section
++#define ne_set_arch_mach _bfd_generic_set_arch_mach
++#define ne_bfd_link_check_relocs _bfd_generic_link_check_relocs
++
++#define ne_get_symtab_upper_bound _bfd_nosymbols_get_symtab_upper_bound
++#define ne_canonicalize_symtab _bfd_nosymbols_canonicalize_symtab
++#define ne_print_symbol _bfd_nosymbols_print_symbol
++#define ne_get_symbol_info _bfd_nosymbols_get_symbol_info
++#define ne_get_symbol_version_string \
++  _bfd_nosymbols_get_symbol_version_string
++#define ne_find_nearest_line _bfd_nosymbols_find_nearest_line
++#define ne_find_line _bfd_nosymbols_find_line
++#define ne_find_inliner_info _bfd_nosymbols_find_inliner_info
++#define ne_get_lineno _bfd_nosymbols_get_lineno
++#define ne_bfd_is_target_special_symbol _bfd_bool_bfd_asymbol_false
++#define ne_bfd_is_local_label_name _bfd_nosymbols_bfd_is_local_label_name
++#define ne_bfd_make_debug_symbol _bfd_nosymbols_bfd_make_debug_symbol
++#define ne_read_minisymbols _bfd_nosymbols_read_minisymbols
++#define ne_minisymbol_to_symbol _bfd_nosymbols_minisymbol_to_symbol
++
++#define ne_canonicalize_reloc _bfd_norelocs_canonicalize_reloc
++#define ne_set_reloc _bfd_norelocs_set_reloc
++#define ne_get_reloc_upper_bound _bfd_norelocs_get_reloc_upper_bound
++#define ne_32_bfd_link_split_section  _bfd_generic_link_split_section
++
++const bfd_target i386_ne_vec =
++  {
++    "ne",			/* name */
++    bfd_target_ne_flavour,
++    BFD_ENDIAN_LITTLE,		/* target byte order */
++    BFD_ENDIAN_LITTLE,		/* target headers byte order */
++    (EXEC_P),			/* object flags */
++    (SEC_CODE | SEC_DATA | SEC_HAS_CONTENTS
++     | SEC_ALLOC | SEC_LOAD),	/* section flags */
++    0,				/* leading underscore */
++    ' ',				/* ar_pad_char */
++    16,				/* ar_max_namelen */
++    0,				/* match priority.  */
++    bfd_getl64, bfd_getl_signed_64, bfd_putl64,
++    bfd_getl32, bfd_getl_signed_32, bfd_putl32,
++    bfd_getl16, bfd_getl_signed_16, bfd_putl16,	/* data */
++    bfd_getl64, bfd_getl_signed_64, bfd_putl64,
++    bfd_getl32, bfd_getl_signed_32, bfd_putl32,
++    bfd_getl16, bfd_getl_signed_16, bfd_putl16,	/* hdrs */
++
++    {
++      _bfd_dummy_target,
++      _bfd_dummy_target,
++      _bfd_dummy_target,
++      _bfd_dummy_target,
++    },
++    {
++      _bfd_bool_bfd_false_error,
++      ne_mkobject,
++      _bfd_generic_mkarchive,
++      _bfd_bool_bfd_false_error,
++    },
++    {				/* bfd_write_contents */
++      _bfd_bool_bfd_false_error,
++      ne_write_object_contents,
++      _bfd_write_archive_contents,
++      _bfd_bool_bfd_false_error,
++    },
++
++    BFD_JUMP_TABLE_GENERIC (ne),
++    BFD_JUMP_TABLE_COPY (_bfd_generic),
++    BFD_JUMP_TABLE_CORE (_bfd_nocore),
++    BFD_JUMP_TABLE_ARCHIVE (_bfd_noarchive),
++    BFD_JUMP_TABLE_SYMBOLS (ne),
++    BFD_JUMP_TABLE_RELOCS (_bfd_norelocs),
++    BFD_JUMP_TABLE_WRITE (ne),
++    BFD_JUMP_TABLE_LINK (ne),
++    BFD_JUMP_TABLE_DYNAMIC (_bfd_nodynamic),
++
++    NULL,
++
++    NULL
++  }; 
+diff --git a/binutils-2.32/bfd/targets.c b/binutils-2.32/bfd/targets.c
+index 158168cb..7e8bafb1 100644
+--- a/binutils-2.32/bfd/targets.c
++++ b/binutils-2.32/bfd/targets.c
+@@ -665,6 +665,7 @@ extern const bfd_target i386_elf32_sol2_vec;
+ extern const bfd_target i386_elf32_vxworks_vec;
+ extern const bfd_target i386_mach_o_vec;
+ extern const bfd_target i386_msdos_vec;
++extern const bfd_target i386_ne_vec;
+ extern const bfd_target i386_pe_vec;
+ extern const bfd_target i386_pei_vec;
+ extern const bfd_target iamcu_elf32_vec;
+@@ -1015,6 +1016,7 @@ static const bfd_target * const _bfd_target_vector[] =
+ 	&i386_elf32_vxworks_vec,
+ 	&i386_mach_o_vec,
+ 	&i386_msdos_vec,
++	&i386_ne_vec,
+ 	&i386_pe_vec,
+ 	&i386_pei_vec,
+ 
+@@ -1715,6 +1717,7 @@ bfd_flavour_name (enum bfd_flavour flavour)
+     case bfd_target_os9k_flavour: return "OS9K";
+     case bfd_target_versados_flavour: return "Versados";
+     case bfd_target_msdos_flavour: return "MSDOS";
++    case bfd_target_ne_flavour: "Windows NE EXE";
+     case bfd_target_ovax_flavour: return "Ovax";
+     case bfd_target_evax_flavour: return "Evax";
+     case bfd_target_mmo_flavour: return "mmo";
+diff --git a/binutils-2.32/ld/Makefile.am b/binutils-2.32/ld/Makefile.am
+index c2c798b4..4bd71601 100644
+--- a/binutils-2.32/ld/Makefile.am
++++ b/binutils-2.32/ld/Makefile.am
+@@ -313,6 +313,7 @@ ALL_EMULATION_SOURCES = \
+ 	ei386lynx.c \
+ 	ei386moss.c \
+ 	ei386msdos.c \
++	ei386ne.c \
+ 	ei386nto.c \
+ 	ei386pe.c \
+ 	ei386pe_posix.c \
+@@ -1401,6 +1402,9 @@ ei386moss.c: $(srcdir)/emulparams/i386moss.sh \
+ ei386msdos.c: $(srcdir)/emulparams/i386msdos.sh \
+   $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/i386msdos.sc ${GEN_DEPENDS}
+ 
++ei386ne.c: $(srcdir)/emulparams/i386ne.sh \
++  $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/i386ne.sc ${GEN_DEPENDS}
++
+ ei386nto.c:	$(srcdir)/emulparams/i386nto.sh \
+   $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+ 
+diff --git a/binutils-2.32/ld/configure.tgt b/binutils-2.32/ld/configure.tgt
+index beba17ef..f2687e75 100644
+--- a/binutils-2.32/ld/configure.tgt
++++ b/binutils-2.32/ld/configure.tgt
+@@ -257,7 +257,7 @@ x86_64-*-linux-gnux32)	targ_emul=elf32_x86_64
+ 			tdir_elf_iamcu=`echo ${targ_alias} | sed -e 's/x86_64/i386/' -e 's/-linux-gnux32/-linux-gnu/'`
+ 			tdir_elf_i386=`echo ${targ_alias} | sed -e 's/x86_64/i386/' -e 's/-linux-gnux32/-linux-gnu/'` ;;
+ x86_64-*-linux-*)	targ_emul=elf_x86_64
+-			targ_extra_emuls="elf32_x86_64 elf_i386 elf_iamcu elf_l1om elf_k1om"
++			targ_extra_emuls="elf32_x86_64 elf_i386 elf_iamcu elf_l1om elf_k1om i386msdos i386ne"
+ 			targ_extra_libpath="elf_i386 elf32_x86_64 elf_l1om elf_k1om"
+ 			tdir_elf_i386=`echo ${targ_alias} | sed -e 's/x86_64/i386/'` ;;
+ i[3-7]86-*-redox*)	targ_emul=elf_i386
+diff --git a/binutils-2.32/ld/emulparams/i386ne.sh b/binutils-2.32/ld/emulparams/i386ne.sh
+new file mode 100755
+index 00000000..4976968f
+--- /dev/null
++++ b/binutils-2.32/ld/emulparams/i386ne.sh
+@@ -0,0 +1,4 @@
++SCRIPT_NAME=i386ne
++OUTPUT_FORMAT="ne"
++ARCH=i386
++COMPILE_IN=yes
+diff --git a/binutils-2.32/ld/genscripts.sh b/binutils-2.32/ld/genscripts.sh
+old mode 100644
+new mode 100755
+diff --git a/binutils-2.32/ld/scripttempl/i386ne.sc b/binutils-2.32/ld/scripttempl/i386ne.sc
+new file mode 100644
+index 00000000..efdd2b9e
+--- /dev/null
++++ b/binutils-2.32/ld/scripttempl/i386ne.sc
+@@ -0,0 +1,21 @@
++# Copyright (C) 2014-2019 Free Software Foundation, Inc.
++#
++# Copying and distribution of this file, with or without modification,
++# are permitted in any medium without royalty provided the copyright
++# notice and this notice are preserved.
++
++cat <<EOF
++/* Copyright (C) 2014-2019 Free Software Foundation, Inc.
++
++   Copying and distribution of this script, with or without modification,
++   are permitted in any medium without royalty provided the copyright
++   notice and this notice are preserved.  */
++
++OUTPUT_FORMAT("${OUTPUT_FORMAT}")
++OUTPUT_ARCH(${ARCH})
++
++SECTIONS
++{
++
++}
++EOF
+diff --git a/binutils-2.32/mkinstalldirs b/binutils-2.32/mkinstalldirs
+old mode 100644
+new mode 100755
+diff --git a/first_build.sh b/first_build.sh
+index b9a4f90f..7f6baea0 100755
+--- a/first_build.sh
++++ b/first_build.sh
+@@ -1,3 +1,9 @@
++cd binutils-2.32/bfd
++autoreconf
++cd ../ld
++autoreconf
++cd ../..
++
+ cd build
+ ../binutils-2.32/configure \
+ 	--prefix=/usr \
+diff --git a/i386ne.c b/i386ne.c
+new file mode 120000
+index 00000000..6e85a277
+--- /dev/null
++++ b/i386ne.c
+@@ -0,0 +1 @@
++/home/fabian/Programming/Wine/win16-2/binutils-2.32/bfd/i386ne.c
+\ No newline at end of file
+diff --git a/i386ne.sc b/i386ne.sc
+new file mode 120000
+index 00000000..f4b4a23c
+--- /dev/null
++++ b/i386ne.sc
+@@ -0,0 +1 @@
++/home/fabian/Programming/Wine/win16-2/binutils-2.32/ld/scripttempl/i386ne.sc
+\ No newline at end of file
+-- 
+2.22.0
+
